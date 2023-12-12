@@ -1,0 +1,9 @@
+pdf2image==1.16.0
+pytesseract==0.3.8
+Pillow==9.3.0
+docx==0.2.4
+persiantools==0.7.5
+jdatetime==3.7.2
+xlsxwriter==3.0.3
+opencv-python==4.6.0.66
+pymupdf==1.20.0
