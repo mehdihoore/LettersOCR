@@ -7,7 +7,8 @@ from docx.shared import Pt
 import re
 import xlsxwriter
 from persiantools.jdatetime import JalaliDate
-
+import fitz
+from fitz import Tools
 # Function to convert PDF to Word document
 
 
@@ -29,7 +30,7 @@ def convert_pdf_to_word(pdf_path):
 
         # Extract text using OCR
         text = pytesseract.image_to_string(
-            Image.open(image_path), lang='fas+equ')
+            Image.open(image_path), lang='fas')
 
         # Add a new page to the Word document
         if i > 0:
@@ -83,7 +84,7 @@ for root, dirs, files in os.walk(pdf_folder_path):
                     if 'موضوع' in para.text:
                         subject = para.text.split('موضوع')[1][:30].strip()
                         subject = re.sub(
-                            r'[\\.,-_#+[\](\)\\/:*?<>|]', '-', subject)
+                            r'[\\.,#+[\](\)\\/:*?<>|]', '-', subject)
                         # Add PDF name to the beginning of the subject with a hyphen
                         subject = f"{os.path.splitext(file)[0]}-{subject}"
 
@@ -91,7 +92,18 @@ for root, dirs, files in os.walk(pdf_folder_path):
                         date_str = para.text.split('تاریخ')[1][:15].strip()
                         date_str = re.sub(
                             r'[\\.,-_#+[\](\)\\/:*?<>|]', '-', date_str)
+                pdf_doc = fitz.open(pdf_path)
+    
+                for page_num in range(pdf_doc.page_count):
+                    page = pdf_doc[page_num]
+                    pix = page.get_pixmap()
+                    img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+                    img.show()
+                
 
+                # Wait for user to view and close 
+                input("Press Enter after reviewing PDF...") 
+                pdf_doc.close()
                 # Confirm or enter data manually
                 confirm_subject = input(
                     f"Extracted subject: {subject}. Enter new subject or press Enter to confirm: ")
