@@ -146,8 +146,8 @@ class SabaatPDFOCR(tk.Tk):
         super().__init__()
 
         self.title("Sabaat PDF OCR")
-        self.geometry("500x400")
-        self.configure(bg="#f0f0f0")
+        self.geometry("500x450")
+        self.configure(bg="#E0E0E0")  # Light gray background
 
         # Set icon
         # Replace with your icon path
@@ -156,6 +156,16 @@ class SabaatPDFOCR(tk.Tk):
         self.create_widgets()
 
     def create_widgets(self):
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure('TFrame', background='#E0E0E0')
+        style.configure('TLabel', background='#E0E0E0', foreground='#000000')
+        style.configure('TButton', background='#FFFFFF', foreground='#000000')
+        style.configure('TRadiobutton', background='#E0E0E0',
+                        foreground='#000000')
+        style.configure('TEntry', fieldbackground='#FFFFFF',
+                        foreground='#000000')
+
         main_frame = ttk.Frame(self, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -214,6 +224,11 @@ class SabaatPDFOCR(tk.Tk):
         self.status_label = ttk.Label(main_frame, text="")
         self.status_label.pack(pady=10)
 
+        # Website address at bottom left
+        website_label = tk.Label(self, text="@ www.sabaat.ir",
+                                 fg="#000000", bg="#E0E0E0", font=("Helvetica", 8))
+        website_label.pack(side=tk.BOTTOM, anchor=tk.SW, padx=5, pady=5)
+
     def browse_input(self):
         if self.file_type_var.get() == "file":
             path = filedialog.askopenfilename(
@@ -253,6 +268,8 @@ class SabaatPDFOCR(tk.Tk):
 
         self.progress_var.set(0)
         self.status_label.config(text="Converting...")
+
+    
 
         Thread(target=self.process_files, args=(
             pdf_files, language, output_path)).start()
