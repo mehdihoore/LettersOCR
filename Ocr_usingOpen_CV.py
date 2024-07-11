@@ -75,18 +75,12 @@ def detect_and_process_tables(image):
 
 
 def convert_pdf_to_word(pdf_path, language, save_dir, progress_callback=None):
-    if not docx_exists(os.path.join(save_dir, os.path.basename(pdf_path))):
+    output_path = os.path.join(save_dir, os.path.basename(
+        os.path.splitext(pdf_path)[0]) + '.docx')
+    if not os.path.exists(output_path):
         try:
             images = convert_from_path(pdf_path)
             doc = Document()
-
-            # Set RTL for the entire document if the language is Farsi
-            section = doc.sections[0]
-            section.start_type = 2  # Continuous section break
-            sectPr = section._sectPr
-            if language == 'fas':
-                bidi = OxmlElement('w:bidi')
-                sectPr.append(bidi)
 
             style = doc.styles['Normal']
             style.font.name = 'Arial' if language != 'fas' else 'B Nazanin'
@@ -99,8 +93,6 @@ def convert_pdf_to_word(pdf_path, language, save_dir, progress_callback=None):
                         image_path = temp_file.name
                         image = preprocess_image(image)
                         image.save(image_path, 'JPEG')
-
-                    table_contours = detect_and_process_tables(image)
 
                     custom_config = r'--oem 3 --psm 6'
                     if language == 'fas':
@@ -115,36 +107,14 @@ def convert_pdf_to_word(pdf_path, language, save_dir, progress_callback=None):
                     text = pytesseract.image_to_string(
                         image, config=custom_config)
 
-                    paragraph = doc.add_paragraph(text)
-                    paragraph.style = 'Normal'
-                    if language == 'fas':
-                        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-                        set_rtl(paragraph)
-                    else:
-                        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-
-                    for contour in table_contours:
-                        x, y, w, h = cv2.boundingRect(contour)
-                        table_image = image.crop((x, y, x+w, y+h))
-                        table_text = pytesseract.image_to_string(
-                            table_image, config=custom_config)
-
-                        rows = table_text.strip().split('\n')
-                        if rows:
-                            cols = max(len(row.split()) for row in rows)
-                            table = doc.add_table(rows=len(rows), cols=cols)
-                            table.style = 'Table Grid'
-                            for i, row in enumerate(rows):
-                                cells = row.split()
-                                for j, cell in enumerate(cells):
-                                    table.cell(i, j).text = cell
-                                    if language == 'fas':
-                                        table.cell(
-                                            i, j).paragraphs[0].alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-                                        set_rtl(table.cell(i, j).paragraphs[0])
-                                    else:
-                                        table.cell(
-                                            i, j).paragraphs[0].alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+                    # Split text into paragraphs and add them to the document
+                    paragraphs = text.split('\n\n')
+                    for para_text in paragraphs:
+                        paragraph = doc.add_paragraph(para_text.strip())
+                        if language == 'fas':
+                            paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+                        else:
+                            paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
 
                     os.remove(image_path)
 
@@ -154,17 +124,15 @@ def convert_pdf_to_word(pdf_path, language, save_dir, progress_callback=None):
                     print(f"Error processing page {
                           i+1} of {pdf_path}: {str(e)}")
 
-            docx_path = os.path.join(save_dir, os.path.basename(
-                os.path.splitext(pdf_path)[0]) + '.docx')
-            doc.save(docx_path)
+            doc.save(output_path)
 
             # Verify the docx file
             try:
-                Document(docx_path)
+                Document(output_path)
                 return True
             except Exception as e:
                 print(f"Error verifying the created document {
-                      docx_path}: {str(e)}")
+                      output_path}: {str(e)}")
                 return False
         except Exception as e:
             print(f"Error processing {pdf_path}: {str(e)}")
@@ -315,7 +283,23 @@ class SabaatPDFOCR(tk.Tk):
             messagebox.showerror("Conversion Errors", error_message)
 
         self.status_label.config(text=f"Conversion complete. {
-                                 converted_files}/{total_files} files converted successfully.")
+                                converted_files}/{total_files} files converted successfully.")
+
+        # Try to open one of the successfully converted files
+        if converted_files > 0:
+            try:
+                successfully_converted = [
+                    f for f in pdf_files if f not in failed_files][0]
+                docx_path = os.path.join(save_dir, os.path.basename(
+                    os.path.splitext(successfully_converted)[0]) + '.docx')
+                os.startfile(docx_path)
+            except Exception as e:
+                print(f"Error opening converted file: {str(e)}")
+                messagebox.showerror(
+                    "Error", "Unable to open converted file. Please check the output directory manually.")
+
+        # Open the output directory
+        os.startfile(save_dir)
 
         # Open the folder containing the converted files
         if converted_files > 0:
