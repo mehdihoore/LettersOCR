@@ -5,25 +5,6 @@ from pdf2image import convert_from_path
 from docx import Document
 from docx.shared import Pt
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
-import multiprocessing
-import tempfile
-import cv2
-import numpy as np
-from threading import Thread
-from docx import Document
-from docx.shared import Pt
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-from docx.oxml.ns import qn
-from docx.oxml import OxmlElement
-import os
-import pytesseract
-from PIL import Image, ImageEnhance, ImageFilter
-from pdf2image import convert_from_path
-from docx import Document
-from docx.shared import Pt
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 import tkinter as tk
